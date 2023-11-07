@@ -10,6 +10,9 @@ def connect_layers_excitory(G1, G2, connection_probability, net, synapses):
             w : 1
             dCa/dt = -Ca/tau_Ca : 1 (event-driven)
             dEndo/dt = (-Endo*1.25)/tau_Endo : 1 (event-driven)
+
+            dapre/dt = -apre/taupre : 1 (event-driven)
+            dapost/dt = -apost/taupost : 1 (event-driven)
             ''',
 
             on_pre='''
@@ -21,14 +24,23 @@ def connect_layers_excitory(G1, G2, connection_probability, net, synapses):
             condition_LTD = int(Ca > 0.2 and Ca < 0.4)
             condition_LTP = int(Ca > 0.7)
 
-            w -= wIncrement * condition_LTP_reverse * 0
-            w -= wIncrement * condition_Remove_Mg * condition_LTD * 5 * 0
+            w -= wIncrement * condition_LTP_reverse * 0.5
+            w -= wIncrement * condition_Remove_Mg * condition_LTD * 0.5
             w += wIncrement * condition_Remove_Mg * condition_LTP * 5
+            
+            apre += Apre
+            w -= apost
 
             w = clip(w, wMin, wMax)
             ''',
             on_post='''
+            apost += Apost
+            w += apre
+            
             Endo = clip(Endo + w, EndoMin, EndoMax)
+
+            w = clip(w, wMin, wMax)
+
             '''
     )
 
@@ -49,14 +61,17 @@ def connect_layers_excitory(G1, G2, connection_probability, net, synapses):
     #          ''')
         
     S.connect(p=connection_probability)
-    S.w = 'clip(wStart*rand(), wStart*0.5, wStart)'
+    # S.w = 'clip(wStart*rand(), wStart*0.5, wStart)'
     net.add(S)
     synapses.append(S)
 
-    # for neuron_index in range(len(G1)):
-    #     if not np.any(S.i[:] == neuron_index):
-    #         target = randint(len(G2))
-    #         S.connect(i=neuron_index, j=target)
+    for neuron_index in range(len(G1)):
+        if not np.any(S.i[:] == neuron_index):
+            target = randint(len(G2))
+            S.connect(i=neuron_index, j=target)
+
+    S.w = 'clip(wStart*rand(), wStart*0.5, wStart)'
+    # S.w = 'wStart'
         
     return (net, synapses)
 
@@ -72,13 +87,21 @@ def generate_layers(G1, G1_spikeMOnitor ,numberOfLayersNeed):
         # numberOfNeurons = rand()*1.5*N
         # if numberOfNeurons < 0.5*N:
         #     numberOfNeurons = N
-        layers.append(NeuronGroup(N, eqs, threshold='v>1', reset='v=0', refractory=1*tau, method='exact'))
-        layers[-1].v = 0
+        layers.append(NeuronGroup(N, eqs, threshold='v>1', reset='v=0', refractory=tau/20, method='exact'))
+        new_layer = layers[-1]
+        new_layer.v = 0
 
-        spike_monitor = SpikeMonitor(layers[-1])
+        spike_monitor = SpikeMonitor(new_layer)
         spikeMonitors.append(spike_monitor)
         net.add(spike_monitor)
-        net.add(layers[-1])
+        net.add(new_layer)
+
+        # @network_operation(dt=0.2*tau)
+        # def print_v():
+        #     if np.max(new_layer.v) > 0:
+        #         print(f"max v: {np.max(new_layer.v)}")
+
+        # net.add(print_v)
 
         (net, synapses) = connect_layers_excitory(layers[count], layers[count+1], input_connect_probability, net, synapses)
 

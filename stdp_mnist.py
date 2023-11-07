@@ -7,7 +7,7 @@ from load_mnist import load_mnist
 
 (X_separated, y_separated) = load_mnist()
 
-def train(number_label, variation, max_layers, multiplierOfN, cross_label, sample_indices):
+def train_uniform_input_per_variation(number_label, variation, max_layers, multiplierOfN, cross_label, sample_indices):
     print("Start training")
 
     # sampling images from the MNIST dataset
@@ -37,11 +37,11 @@ def train(number_label, variation, max_layers, multiplierOfN, cross_label, sampl
         return weight_matrices_per_variation
 
 # at most two for simplicity of comprehension
-def compare_train(number_labels, variation, max_layers, multiplierOfN, sample_indices_two_label):    
+def compare_train_uniform_input_per_variation(number_labels, variation, max_layers, multiplierOfN, sample_indices_two_label):    
     if not multiplierOfN:
-        weight_matrices_per_label = [train(label, variation, max_layers, multiplierOfN, True, sample_indices_label) for label, sample_indices_label in zip(number_labels, sample_indices_two_label)]
+        weight_matrices_per_label = [train_uniform_input_per_variation(label, variation, max_layers, multiplierOfN, True, sample_indices_label) for label, sample_indices_label in zip(number_labels, sample_indices_two_label)]
     else:
-        weight_matrices_per_label = [train(label, variation, max_layers, multiplierOfN, True, sample_indices_label) for label, sample_indices_label in zip(number_labels, sample_indices_two_label)]
+        weight_matrices_per_label = [train_uniform_input_per_variation(label, variation, max_layers, multiplierOfN, True, sample_indices_label) for label, sample_indices_label in zip(number_labels, sample_indices_two_label)]
 
     label1_weights, label2_weights = weight_matrices_per_label
 
@@ -68,8 +68,8 @@ sample_indices = None
 # sample_indices_two_label = [[6780, 5566]]
 # sample_indices_two_label_2 = [[6710, 6084], [3465, 296]]
 
-train(number_label, variation, numberOfLayers, None, False, None)
-# train(number_label, variation, None, multiplierOfN, False, None)
+train_uniform_input_per_variation(number_label, variation, numberOfLayers, None, False, None)
+# train_uniform_input_per_variation(number_label, variation, None, multiplierOfN, False, None)
 
-# compare_train([number_label,8], variation, None, multiplierOfN, sample_indices_two_label_2)
-# compare_train([number_label,4], variation, None, multiplierOfN, [None, None])
+# compare_train_uniform_input_per_variation([number_label,2], variation, numberOfLayers, None, [None, None])
+# compare_train_uniform_input_per_variation([number_label,4], variation, None, multiplierOfN, [None, None])

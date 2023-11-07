@@ -6,9 +6,9 @@ tau = 5*ms
 tau_Ca = 0.8*tau
 tau_Endo = 0.6*tau
 
-taupre = taupost = 2*tau
+taupre = taupost = 0.7*tau
 Apre = 0.01
-Apost = -Apre*taupre/taupost*1.05
+Apost = Apre*taupre/taupost*1.05
 
 
 # eqs = '''
@@ -35,7 +35,7 @@ wStart = 0.05
 wAddThreshold = 0.6
 
 max_rate = 300 * Hz
-iteration = 2
+iteration = 10
 duration = 50 * ms
 total_duration = iteration * duration
 total_duration_graph = total_duration/ms

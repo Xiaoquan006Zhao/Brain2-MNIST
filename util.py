@@ -10,15 +10,15 @@ def poisson_encoding(image, max_rate):
     input_rates = np.ceil(image.flatten() / 255.0) * max_rate
     N = len(input_rates) 
 
-    time_step = 0.99*tau
+    # time_step = 0.999*tau
+
+    # high-frequency stimulation
+    time_step = 0.049*tau
 
     input_indices = np.nonzero(input_rates)[0]
 
-    eqsWInput = '''
-        v : 1
-    '''
-
-    input_group = NeuronGroup(N, eqsWInput, threshold='v>1', reset="v=0")
+    # v is a static variable, because v is updated by the input, thus no need to be leaky
+    input_group = NeuronGroup(N, '''v : 1''', threshold='v>1', reset="v=0")
     input_group.v = 0
 
     @network_operation(dt=time_step)
