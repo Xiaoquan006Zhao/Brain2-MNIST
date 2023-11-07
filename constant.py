@@ -11,8 +11,12 @@ Apre = 0.01
 Apost = -Apre*taupre/taupost*1.05
 
 
+# eqs = '''
+# dv/dt = -v/tau : 1
+# '''
+
 eqs = '''
-dv/dt = -v/tau : 1
+v:1
 '''
 
 CaIncrement = 0.1
@@ -31,8 +35,8 @@ wStart = 0.05
 wAddThreshold = 0.6
 
 max_rate = 300 * Hz
-iteration = 4
-duration = 100 * ms
+iteration = 2
+duration = 50 * ms
 total_duration = iteration * duration
 total_duration_graph = total_duration/ms
 # interval = total_duration_graph / 6
