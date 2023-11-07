@@ -1,3 +1,4 @@
 /.venv
 /mnist.pkl
 /gif
+/.DS_Store
