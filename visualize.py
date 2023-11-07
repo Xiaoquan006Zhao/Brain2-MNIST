@@ -71,10 +71,10 @@ def visualize_multi_layer_weights_2D(synapses, label, max_layer, image_counter):
 
         weight_matrices.append(weight_matrix)
         
-        im = axs[index].imshow(weight_matrix[:,:], cmap='hot', vmin=0, vmax=1)
+        im = axs[index].imshow(weight_matrix[:,:], cmap='inferno', vmin=0, vmax=1)
         axs[index].set_title(f'Layer {index+1} Weights')
-
-    plt.savefig(f'{save_path}Weight-label-{label}-max-{max_layer}-vari-{image_counter}.png', dpi=4000)
+    
+    plt.savefig(f'{save_path}Weight-label-{label}-max-{max_layer}-vari-{image_counter}.png', dpi=1000)
     # plt.show()
 
     return weight_matrices

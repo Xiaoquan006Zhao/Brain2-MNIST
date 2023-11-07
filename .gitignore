@@ -1,4 +1,4 @@
-/.venv
 /mnist.pkl
 /gif
 /.DS_Store
+/__pycache__

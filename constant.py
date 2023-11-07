@@ -27,11 +27,11 @@ wMax = 1
 CaMin = EndoMin = ClMin = 0
 wMin = 0.001
 
-wStart = 0.1
+wStart = 0.05
 wAddThreshold = 0.6
 
 max_rate = 300 * Hz
-iteration = 2
+iteration = 4
 duration = 100 * ms
 total_duration = iteration * duration
 total_duration_graph = total_duration/ms
@@ -39,5 +39,5 @@ total_duration_graph = total_duration/ms
 
 interval = tau/ms
 
-input_connect_probability = 0.1
+input_connect_probability = 0.005
 agg_connect_probability = 0.0005
