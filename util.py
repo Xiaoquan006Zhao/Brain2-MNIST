@@ -13,7 +13,7 @@ def poisson_encoding(image, max_rate):
     # time_step = 0.999*tau
 
     # high-frequency stimulation
-    time_step = 0.049*tau
+    time_step = 0.1*tau
 
     input_indices = np.nonzero(input_rates)[0]
 

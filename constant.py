@@ -21,12 +21,12 @@ v:1
 
 CaIncrement = 0.1
 EndoIncrement = 0.1
-wIncrement = 0.1
+wIncrement = 0.01
 
 ClMax = 1 
 CaMax = 1 # so that ca will decay in reason time in case of a lot of stimulation
 EndoMax = 1 # so that Endo will decay in reason time in case of a lot of stimulation
-wMax = 1
+wMax = 0.5
 
 CaMin = EndoMin = ClMin = 0
 wMin = 0.001

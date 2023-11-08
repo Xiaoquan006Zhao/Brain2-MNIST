@@ -9,24 +9,27 @@ def connect_layers_excitory(G1, G2, connection_probability, net, synapses):
             '''
             w : 1
             dCa/dt = -Ca/tau_Ca : 1 (event-driven)
-            dEndo/dt = (-Endo*1.25)/tau_Endo : 1 (event-driven)
 
             dapre/dt = -apre/taupre : 1 (event-driven)
             dapost/dt = -apost/taupost : 1 (event-driven)
             ''',
 
+            # v_post += w + condition_high_voltage*v_post*0.1, make it easier to fire when close to fire
+                # like opening more voltage gates when close to fire
+            # (100 * (Ca-0.2) * (0.4-Ca)) meanings center at 0.3, just to scale the LTD 
+            # (Ca - 0.7) * 3, same reason as above
             on_pre='''
-            v_post += w
+            condition_high_voltage = int(v_post > 0.6)
+            v_post += w + condition_high_voltage*v_post*0.1
+
             Ca = clip(Ca + w, CaMin, CaMax)
             
-            condition_LTP_reverse = int(Endo > 0.4)
             condition_Remove_Mg = int(v_post > 0.7)
             condition_LTD = int(Ca > 0.2 and Ca < 0.4)
             condition_LTP = int(Ca > 0.7)
 
-            w -= wIncrement * condition_LTP_reverse * 0.5
-            w -= wIncrement * condition_Remove_Mg * condition_LTD * 0.5
-            w += wIncrement * condition_Remove_Mg * condition_LTP * 5
+            w -= wIncrement * condition_Remove_Mg * condition_LTD * (100 * (Ca-0.2) * (0.4-Ca))
+            w += wIncrement * condition_Remove_Mg * condition_LTP * (Ca - 0.7) * 3
             
             apre += Apre
             w -= apost
@@ -37,8 +40,6 @@ def connect_layers_excitory(G1, G2, connection_probability, net, synapses):
             apost += Apost
             w += apre
             
-            Endo = clip(Endo + w, EndoMin, EndoMax)
-
             w = clip(w, wMin, wMax)
 
             '''
@@ -61,7 +62,6 @@ def connect_layers_excitory(G1, G2, connection_probability, net, synapses):
     #          ''')
         
     S.connect(p=connection_probability)
-    # S.w = 'clip(wStart*rand(), wStart*0.5, wStart)'
     net.add(S)
     synapses.append(S)
 
@@ -71,7 +71,7 @@ def connect_layers_excitory(G1, G2, connection_probability, net, synapses):
             S.connect(i=neuron_index, j=target)
 
     S.w = 'clip(wStart*rand(), wStart*0.5, wStart)'
-    # S.w = 'wStart'
+    S.w = 'wStart*rand()'
         
     return (net, synapses)
 

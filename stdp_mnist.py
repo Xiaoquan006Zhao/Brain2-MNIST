@@ -59,7 +59,7 @@ def compare_train_uniform_input_per_variation(number_labels, variation, max_laye
         print(total_diff)
         print(average)
 
-number_label = 7
+number_label = 5
 variation = 2
 numberOfLayers = 3
 multiplierOfN = 2
