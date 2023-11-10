@@ -5,45 +5,55 @@ from synapse_layered import simulate_layers
 from synapse_agg import simulate_agg
 from load_mnist import load_mnist
 
-(X_separated, y_separated) = load_mnist()
+def load_data():
+    return load_mnist()
 
-def train_uniform_input_per_variation(number_label, variation, max_layers, multiplierOfN, cross_label, sample_indices):
-    print("Start training")
-
-    # sampling images from the MNIST dataset
+def train(number_label, variation, max_layers=None, multiplierOfN=None, cross_label=False, sample_indices=None, switch_input=False):
+    """Trains the model based on the given parameters."""
     input_images = sample_images(X_separated, number_label, variation, sample_indices)
 
-    if not multiplierOfN:
-        weight_matrices_per_variation = [simulate_layers(image, max_layers, number_label, index) for index, image in enumerate(input_images)]
+    training_mode = "uniform" if not switch_input else "different"
+    print(f"Start {training_mode} input training")
+
+    # Choose simulation function based on multiplierOfN
+    simulate = simulate_layers if not multiplierOfN else simulate_agg
+    if not switch_input:
+        weight_matrices_per_variation = [
+            simulate(image, max_layers or multiplierOfN, number_label, index)
+            for index, image in enumerate(input_images)
+        ]
     else:
-        weight_matrices_per_variation = [simulate_agg(image, multiplierOfN, number_label, index) for index, image in enumerate(input_images)]
+        len_images = len(input_images) // 2
+        weight_matrices_per_variation = [
+            simulate(input_images[:len_images], max_layers or multiplierOfN, number_label, -1),
+            simulate(input_images[len_images:], max_layers or multiplierOfN, number_label, -2)
+        ]
 
-    # transpose so that each subarray contains the corresponding synapse not just all synapse from one variation
-    size_outer = len(weight_matrices_per_variation)
-    size_inner = len(weight_matrices_per_variation[0])
-    swapped_list = []
-    for i in range(size_inner):
-        swapped_list.append([weight_matrices_per_variation[j][i] for j in range(size_outer)])
-    weight_matrices_per_variation = swapped_list
+    # Transpose the weight matrices for cross-label comparison
+    weight_matrices_per_variation = list(map(list, zip(*weight_matrices_per_variation)))
 
+    # Perform comparison if cross_label is True
     if not cross_label:
-        for index, layer in enumerate(weight_matrices_per_variation):
-            pairwise_diffs = [np.abs(a - b) for a, b in combinations(layer, 2)]
-            total_diff = [int(np.sum(diff)) for diff in pairwise_diffs]
-            average = np.mean(total_diff)
-            print(total_diff)
-            print(average)
-    else:
-        return weight_matrices_per_variation
+        return compare_weights(weight_matrices_per_variation)
+    return weight_matrices_per_variation
 
-# at most two for simplicity of comprehension
-def compare_train_uniform_input_per_variation(number_labels, variation, max_layers, multiplierOfN, sample_indices_two_label):    
-    if not multiplierOfN:
-        weight_matrices_per_label = [train_uniform_input_per_variation(label, variation, max_layers, multiplierOfN, True, sample_indices_label) for label, sample_indices_label in zip(number_labels, sample_indices_two_label)]
-    else:
-        weight_matrices_per_label = [train_uniform_input_per_variation(label, variation, max_layers, multiplierOfN, True, sample_indices_label) for label, sample_indices_label in zip(number_labels, sample_indices_two_label)]
+def compare_weights(weight_matrices):
+    """Compares the weight matrices and prints the differences."""
+    for layer in weight_matrices:
+        pairwise_diffs = [np.abs(a - b) for a, b in combinations(layer, 2)]
+        total_diff = [int(np.sum(diff)) for diff in pairwise_diffs]
+        average_diff = np.mean(total_diff)
+        print("Differences:", total_diff)
+        print("Average difference:", average_diff)
 
-    label1_weights, label2_weights = weight_matrices_per_label
+def compare_train(number_labels, variation, max_layers=None, multiplierOfN=None, sample_indices_two_label=None, switch_input=False):
+    """Compares the training weights for different labels."""
+    weights_per_label = [
+        train(label, variation, max_layers, multiplierOfN, True, sample_indices, switch_input)
+        for label, sample_indices in zip(number_labels, sample_indices_two_label)
+    ]
+
+    label1_weights, label2_weights = weights_per_label
 
     for index, label1_layer in enumerate(label1_weights):
         label2_layer = label2_weights[index]
@@ -59,17 +69,25 @@ def compare_train_uniform_input_per_variation(number_labels, variation, max_laye
         print(total_diff)
         print(average)
 
-number_label = 5
-variation = 2
+# Use the function with specific parameters
+X_separated, y_separated = load_data()
+number_label = 6
+number_label_2 = 8
+variation = 10
 numberOfLayers = 3
-multiplierOfN = 2
+multiplierOfN = None
 sample_indices = None
+sample_indices_two_label = [None, None]
 
-# sample_indices_two_label = [[6780, 5566]]
-# sample_indices_two_label_2 = [[6710, 6084], [3465, 296]]
+# train(number_label, variation, numberOfLayers, None, False, sample_indices, False)
+# train(number_label, variation, None, multiplierOfN, False, sample_indices, False)
 
-train_uniform_input_per_variation(number_label, variation, numberOfLayers, None, False, None)
-# train_uniform_input_per_variation(number_label, variation, None, multiplierOfN, False, None)
+train(number_label, variation, numberOfLayers, None, False, sample_indices, True)
+# train(number_label, variation, None, multiplierOfN, False, sample_indices, True)
 
-# compare_train_uniform_input_per_variation([number_label,2], variation, numberOfLayers, None, [None, None])
-# compare_train_uniform_input_per_variation([number_label,4], variation, None, multiplierOfN, [None, None])
+
+# compare_train([number_label, number_label_2], variation, numberOfLayers, sample_indices_two_label, False, sample_indices, False)
+# compare_train([number_label, number_label_2], variation, None, multiplierOfN, sample_indices_two_label, False)
+
+# compare_train([number_label, number_label_2], variation, numberOfLayers, None, sample_indices_two_label, True)
+# compare_train([number_label, number_label_2], variation, None, multiplierOfN, sample_indices_two_label, True)

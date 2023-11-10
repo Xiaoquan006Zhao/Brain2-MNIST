@@ -19,7 +19,7 @@ def connect_layers_excitory(G1, G2, connection_probability, net, synapses):
             # (100 * (Ca-0.2) * (0.4-Ca)) meanings center at 0.3, just to scale the LTD 
             # (Ca - 0.7) * 3, same reason as above
             on_pre='''
-            condition_high_voltage = int(v_post > 0.6)
+            condition_high_voltage = int(v_post > 0.75)
             v_post += w + condition_high_voltage*v_post*0.1
 
             Ca = clip(Ca + w, CaMin, CaMax)
@@ -37,6 +37,9 @@ def connect_layers_excitory(G1, G2, connection_probability, net, synapses):
             w = clip(w, wMin, wMax)
             ''',
             on_post='''
+            condition_high_voltage = int(v_pre > 0.75)
+            v_pre += w + condition_high_voltage*v_post*0.1
+
             apost += Apost
             w += apre
             
@@ -137,7 +140,11 @@ def run_and_update(net, synapses, time):
     #         add_offset += 0.01
 
 def simulate_layers(image, numberOfLayers, label, image_counter):
-    (inputGroup ,input_spikeMonitor, networkOperation) = poisson_encoding(image, max_rate)
+
+    if isinstance(image, list):
+        (inputGroup ,input_spikeMonitor, networkOperation) = poisson_encoding_images(image, max_rate)
+    else:
+        (inputGroup ,input_spikeMonitor, networkOperation) = poisson_encoding(image, max_rate)
 
     # generate 1 less layers, cuz input layer count as 1
     (net, synapses, spikeMonitors) = generate_layers(inputGroup, input_spikeMonitor, numberOfLayers-1)

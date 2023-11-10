@@ -11,7 +11,6 @@ def poisson_encoding(image, max_rate):
     N = len(input_rates) 
 
     # time_step = 0.999*tau
-
     # high-frequency stimulation
     time_step = 0.1*tau
 
@@ -28,6 +27,52 @@ def poisson_encoding(image, max_rate):
             input_group.v[input_index] = 1.1
 
     return (input_group, SpikeMonitor(input_group), update_v)
+
+def poisson_encoding_images(images, max_rate):
+    input_array = []
+    for image in images:
+        input_rates = np.ceil(image.flatten() / 255.0) * max_rate
+        input_array.append(input_rates)
+    
+    N = len(input_rates)
+    input_switch_counter = 0
+    input_switch_threshold = 10*tau/ms
+    input_pause_threshold = 2*tau/ms
+
+    # time_step = 0.999*tau
+    # high-frequency stimulation
+    time_step = 0.1*tau
+
+    which_image = 0
+    input_indices = np.nonzero(input_rates)[0]
+
+    # v is a static variable, because v is updated by the input, thus no need to be leaky
+    input_group = NeuronGroup(N, '''v : 1''', threshold='v>1', reset="v=0")
+    input_group.v = 0
+
+    @network_operation(dt=time_step)
+    def update_v():
+        nonlocal input_pause_threshold
+        nonlocal input_switch_counter
+        nonlocal which_image
+        nonlocal input_indices
+
+        input_switch_counter += 1
+        input_group.v = 0 
+        input_indices = np.nonzero(input_array[which_image])[0]
+
+        if input_switch_counter > input_switch_threshold:
+            input_switch_counter = 0
+            which_image += 1
+            which_image = which_image % len(input_array)
+
+        
+        if input_switch_counter > input_pause_threshold:
+            for input_index in input_indices:
+                input_group.v[input_index] = 1.1
+
+    return (input_group, SpikeMonitor(input_group), update_v)
+
 
 def sample_images(image_database, label, num_samples, indices):
     if label < 0 or label > 9:
