@@ -71,7 +71,7 @@ def compare_train(number_labels, variation, max_layers=None, multiplierOfN=None,
 
 # Use the function with specific parameters
 X_separated, y_separated = load_data()
-number_label = 6
+number_label = 2
 number_label_2 = 8
 variation = 10
 numberOfLayers = 3
@@ -79,10 +79,10 @@ multiplierOfN = None
 sample_indices = None
 sample_indices_two_label = [None, None]
 
-# train(number_label, variation, numberOfLayers, None, False, sample_indices, False)
-# train(number_label, variation, None, multiplierOfN, False, sample_indices, False)
+train(number_label, 2, numberOfLayers, None, False, sample_indices, False)
+# train(number_label, 2, None, multiplierOfN, False, sample_indices, False)
 
-train(number_label, variation, numberOfLayers, None, False, sample_indices, True)
+# train(number_label, variation, numberOfLayers, None, False, sample_indices, True)
 # train(number_label, variation, None, multiplierOfN, False, sample_indices, True)
 
 

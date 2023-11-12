@@ -4,6 +4,7 @@ from visualize import *
 import random
 from synapse_layered import run_and_update, connect_layers_excitory
 from constant import *
+from layers import *
 
 
 def generate_agg(G1, G1_spikeMonitor ,multiplierOfN):
@@ -14,8 +15,9 @@ def generate_agg(G1, G1_spikeMonitor ,multiplierOfN):
     spikeMonitors = [G1_spikeMonitor]
     layers = [G1]
 
-    agg_group = NeuronGroup(multiplierOfN*N, eqs, threshold='v>1', reset='v=0', refractory=1*tau, method='exact')
+    agg_group = NeuronGroup(multiplierOfN*N, neuron_eqs, threshold=threshold_eqs, reset=reset_eqs, refractory=1*tau, method='exact')
     agg_group.v = 0
+    agg_group.theta = 0
 
     agg_spikeMonitor = SpikeMonitor(agg_group)
 

@@ -117,4 +117,22 @@ def one_hot_encode_word(word):
 
     return one_hot_vector
 
+def perfect_square(number):
+    # Check if the number is already a perfect square
+    if (number**0.5).is_integer():
+        return (int(number**0.5), int(number**0.5))
+
+    # If not a perfect square, find the closest combination
+    for i in range(int(number**0.5), 0, -1):
+        if number % i == 0:
+            return (number // i, i)
+
+    # If no exact divisor found, return the closest combination
+    for i in range(int(number**0.5), 0, -1):
+        j = number // i
+        if i * j < number:
+            return (j + 1, i)
+
+    return None
+
 
