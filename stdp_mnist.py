@@ -71,7 +71,7 @@ def compare_train(number_labels, variation, max_layers=None, multiplierOfN=None,
 
 # Use the function with specific parameters
 X_separated, y_separated = load_data()
-number_label = 2
+number_label = 3
 number_label_2 = 8
 variation = 10
 numberOfLayers = 3

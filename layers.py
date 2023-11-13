@@ -2,26 +2,61 @@ from brian2 import *
 from constant import *
 from util import perfect_square
 
-def connect_layers_excitory(G1, G2, connection_probability, net, synapses):
+def add_to_meta_collection(neuronGroup, meta_collection):
+    (net, spikeMonitors, neuronGroups, synapses) = meta_collection
+
+    spike_monitor = SpikeMonitor(neuronGroup)
+    spikeMonitors.append(spike_monitor)
+    net.add(spike_monitor)
+    net.add(neuronGroup)
+    neuronGroups.append(neuronGroup)
+
+    return (net, spikeMonitors, neuronGroups, synapses)
+
+def initialize(neuronGroup):
+    neuronGroup.v = 0
+    neuronGroup.theta = 0
+
+def generate_connect_layers(groups ,numberOfLayersNeed, meta_collection):
+    (net, spikeMonitors, neuronGroups, synapses) = meta_collection
+
+    if isinstance(groups, list):
+        N = groups[0].N
+        layers = []
+        for group in groups:
+            layers.append(group)
+
+        layers.append(NeuronGroup(N, neuron_eqs, threshold=threshold_eqs, reset=reset_eqs, refractory=tau/20, method='exact'))
+        new_layer = layers[-1]
+        initialize(new_layer)
+        meta_collection = add_to_meta_collection(new_layer, meta_collection)
+        
+        for group in groups:
+            (net, synapses) = connect_layers_excitory(group, new_layer, 1, meta_collection)
+    else:
+        N = groups.N
+        layers = [groups]
+
+    for count in range(numberOfLayersNeed-1):
+        # numberOfNeurons = rand()*1.5*N
+        # if numberOfNeurons < 0.5*N:
+        #     numberOfNeurons = N
+        layers.append(NeuronGroup(N, neuron_eqs, threshold=threshold_eqs, reset=reset_eqs, refractory=tau/20, method='exact'))
+        new_layer = layers[-1]
+        initialize(new_layer)
+
+        meta_collection = add_to_meta_collection(new_layer, meta_collection)
+
+        (net, synapses) = connect_layers_excitory(layers[count], layers[count+1], 1, meta_collection)
+
+    return meta_collection
+
+def connect_layers_excitory(G1, G2, connection_probability, meta_collection):
+    (net, spikeMonitors, neuronGroups, synapses) = meta_collection
+
     S = Synapses(G1, G2, model=synapse_voltage_model+synapse_learning_model, 
                  on_pre=on_pre_model, 
                  on_post=on_post_model)
-
-    # S = Synapses(G1, G2,
-    #          '''
-    #          w : 1
-    #          dapre/dt = -apre/taupre : 1 (event-driven)
-    #          dapost/dt = -apost/taupost : 1 (event-driven)
-    #          ''',
-    #          on_pre='''
-    #          v_post += w
-    #          apre += Apre
-    #          w = clip(w+apost, 0, wMax)
-    #          ''',
-    #          on_post='''
-    #          apost += Apost
-    #          w = clip(w+apre, 0, wMax)
-    #          ''')
         
     S.connect(p=connection_probability)
     net.add(S)
@@ -33,11 +68,13 @@ def connect_layers_excitory(G1, G2, connection_probability, net, synapses):
             S.connect(i=neuron_index, j=target)
 
     S.w = 'clip(wStart*rand(), wStart*0.5, wStart)'
-    S.w = 'wStart'
+    S.w = 'wStart*rand()'
         
     return (net, synapses)
 
-def generate_connect_layers_conv(G, net, spikeMonitors, kernel_size=3, stride=1):
+def generate_connect_layers_conv(G, meta_collection, kernel_size=3, stride=1, kernel_data=None):
+    (net, spikeMonitors, neuronGroups, synapses) = meta_collection
+    
     (input_height, input_width) = perfect_square(G.N)
 
     output_height = int((input_height - kernel_size) / stride) + 1
@@ -48,12 +85,15 @@ def generate_connect_layers_conv(G, net, spikeMonitors, kernel_size=3, stride=1)
     spike_monitor = SpikeMonitor(conv_neurons)
     net.add(spike_monitor)
     spikeMonitors.append(spike_monitor)
+    neuronGroups.append(conv_neurons)
 
-    connect_layers_conv(G, net, conv_neurons, (kernel_size, output_height, output_width, input_height, input_width, stride))
+    meta_data = (kernel_size, output_height, output_width, input_height, input_width, stride)
 
-    return (net, spikeMonitors, conv_neurons)
+    connect_layers_conv(G, net, conv_neurons, kernel_data, meta_data)
+    
+    return (meta_collection, conv_neurons)
 
-def connect_layers_conv(G, net, conv_neurons, meta_data):
+def connect_layers_conv(G, net, conv_neurons, kernel_data, meta_data):
     (kernel_size, output_height, output_width, input_height, input_width, stride) = meta_data
     kernel_synapses = []
 
@@ -64,9 +104,11 @@ def connect_layers_conv(G, net, conv_neurons, meta_data):
                 w : 1 (shared)
                 '''+synapse_learning_model,
                 on_pre='''
-                '''+on_pre_model,
+                v_post += w
+                ''',
                 on_post='''
-                '''+on_post_model)
+                '''
+                )
             net.add(S)
             kernel_synapses.append(S)
 
@@ -79,8 +121,10 @@ def connect_layers_conv(G, net, conv_neurons, meta_data):
                 input_index = (start_row + kernel_row) * input_width + (start_col + kernel_col)
                 kernel_synapses[kernel_row * kernel_size + kernel_col].connect(i=input_index, j=output_index)
 
-    for ks in kernel_synapses:
-        ks.w = rand()
+    # square kernel
+    if kernel_data != None and len(kernel_data) == kernel_size**2:
+        for index in range(len(kernel_data)):
+                kernel_synapses[index].w = kernel_data[index]
             
 
 

@@ -48,32 +48,33 @@ on_pre_model = '''
 Ca_temp = Ca
 v_temp = v_post
 
-condition_high_voltage = int(v_post > 0.75)
-v_post += w + condition_high_voltage*v_post*0.1
+condition_high_voltage = int(v_temp > 0.75)
+v_temp += w + condition_high_voltage*v_post*0.1
 
-Ca = clip(Ca + w, CaMin, CaMax)
+Ca_temp = clip(Ca_temp + w, CaMin, CaMax)
 
-condition_Remove_Mg = int(v_post > 0.7)
-condition_LTD = int(Ca > 0.2 and Ca < 0.4)
-condition_LTP = int(Ca > 0.7)
+condition_Remove_Mg = int(v_temp > 0.7)
+condition_LTD = int(Ca_temp > 0.2 and Ca_temp < 0.4)
+condition_LTP = int(Ca_temp > 0.7)
 
-w -= wIncrement * condition_Remove_Mg * condition_LTD * (100 * (Ca-0.2) * (0.4-Ca))
-w += wIncrement * condition_Remove_Mg * condition_LTP * (Ca - 0.7) * 3
+w -= wIncrement * condition_Remove_Mg * condition_LTD * (100 * (Ca_temp-0.2) * (0.4-Ca_temp))
+w += wIncrement * condition_Remove_Mg * condition_LTP * (Ca_temp - 0.7) * 3
 
 w -= apost
 w = clip(w, wMin, wMax)
 
 apre += Apre
-
-
+v_post = v_temp
+Ca = Ca_temp
 '''
 
+# v_pre += w + condition_high_voltage*v_post*0.1
 on_post_model = '''
 w += apre
 w = clip(w, wMin, wMax)
 
 condition_high_voltage = int(v_pre > 0.75)
-v_pre += w + condition_high_voltage*v_post*0.1
+
 
 apost += Apost
 '''
@@ -88,9 +89,9 @@ EndoMax = 1 # so that Endo will decay in reason time in case of a lot of stimula
 wMax = 0.74 # 1/1.3 which comes from x + 0.3x > 1, because dv/dt retains about 36% of original value after tau
 
 CaMin = EndoMin = ClMin = 0
-wMin = 0.001
+wMin = 0.0001
 
-wStart = 0.05
+wStart = 0.0009
 wAddThreshold = 0.6
 
 max_rate = 300 * Hz

@@ -31,6 +31,7 @@ def visualize_multi_layer_spikes_2D(spike_monitors,  img_neurons, duration, inte
         nonlocal last_time
 
         for spike_index in range(len(spike_monitors)):
+
             spike_monitor = spike_monitors[spike_index]
             spike_times = spike_monitor.t/ms
             spike_indices = spike_monitor.i
