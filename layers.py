@@ -1,5 +1,6 @@
 from brian2 import *
 from constant import *
+from model_constant import *
 from util import perfect_square
 
 def add_to_meta_collection(neuronGroup, meta_collection):
@@ -47,7 +48,7 @@ def generate_connect_layers(groups ,numberOfLayersNeed, meta_collection):
 
         meta_collection = add_to_meta_collection(new_layer, meta_collection)
 
-        (net, synapses) = connect_layers_excitory(layers[count], layers[count+1], 1, meta_collection)
+        (net, synapses) = connect_layers_excitory(layers[count], layers[count+1], input_connect_probability, meta_collection)
 
     return meta_collection
 
@@ -69,7 +70,14 @@ def connect_layers_excitory(G1, G2, connection_probability, meta_collection):
 
     S.w = 'clip(wStart*rand(), wStart*0.5, wStart)'
     S.w = 'wStart*rand()'
-        
+    S.w = 'wStart'
+
+    # for neuron_index in range(len(G1)):
+    #     synapse_indices = S.i[:] == neuron_index
+    #     total_weight = np.sum(S.w[synapse_indices])
+    #     if total_weight > 0:
+    #         S.w[synapse_indices] /= total_weight / wMax
+
     return (net, synapses)
 
 def generate_connect_layers_conv(G, meta_collection, kernel_size=3, stride=1, kernel_data=None):

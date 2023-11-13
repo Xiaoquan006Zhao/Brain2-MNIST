@@ -79,11 +79,11 @@ multiplierOfN = None
 sample_indices = None
 sample_indices_two_label = [None, None]
 
-train(number_label, 2, numberOfLayers, None, False, sample_indices, False)
-# train(number_label, 2, None, multiplierOfN, False, sample_indices, False)
+train(number_label, 2, numberOfLayers, None, False, sample_indices, switch_input=False)
+# train(number_label, 2, None, multiplierOfN, False, sample_indices, switch_input=False)
 
-# train(number_label, variation, numberOfLayers, None, False, sample_indices, True)
-# train(number_label, variation, None, multiplierOfN, False, sample_indices, True)
+# train(number_label, variation, numberOfLayers, None, False, sample_indices, switch_input=True)
+# train(number_label, variation, None, multiplierOfN, False, sample_indices, switch_input=True)
 
 
 # compare_train([number_label, number_label_2], variation, numberOfLayers, sample_indices_two_label, False, sample_indices, False)
