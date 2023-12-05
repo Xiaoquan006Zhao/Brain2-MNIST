@@ -1,6 +1,7 @@
 from brian2 import *
 from constant import *
-from model_constant import *
+# from model_constant import *
+from model_constant_simple import *
 from util import perfect_square
 
 def add_to_meta_collection(neuronGroup, meta_collection):
@@ -27,7 +28,7 @@ def generate_connect_layers(groups ,numberOfLayersNeed, meta_collection):
         for group in groups:
             layers.append(group)
 
-        layers.append(NeuronGroup(N, neuron_eqs, threshold=threshold_eqs, reset=reset_eqs, refractory=tau/20, method='exact'))
+        layers.append(NeuronGroup(N, neuron_eqs, threshold=threshold_eqs, reset=reset_eqs, refractory=0.2*tau, method='exact'))
         new_layer = layers[-1]
         initialize(new_layer)
         meta_collection = add_to_meta_collection(new_layer, meta_collection)
@@ -42,7 +43,7 @@ def generate_connect_layers(groups ,numberOfLayersNeed, meta_collection):
         # numberOfNeurons = rand()*1.5*N
         # if numberOfNeurons < 0.5*N:
         #     numberOfNeurons = N
-        layers.append(NeuronGroup(N, neuron_eqs, threshold=threshold_eqs, reset=reset_eqs, refractory=tau/20, method='exact'))
+        layers.append(NeuronGroup(N, neuron_eqs, threshold=threshold_eqs, reset=reset_eqs, refractory=0.2*tau, method='exact'))
         new_layer = layers[-1]
         initialize(new_layer)
 
@@ -52,31 +53,63 @@ def generate_connect_layers(groups ,numberOfLayersNeed, meta_collection):
 
     return meta_collection
 
-def connect_layers_excitory(G1, G2, connection_probability, meta_collection):
+def connect_layers_excitory(G1, G2, connection_probability, meta_collection, excitory_connection=True):
     (net, spikeMonitors, neuronGroups, synapses) = meta_collection
 
     S = Synapses(G1, G2, model=synapse_voltage_model+synapse_learning_model, 
-                 on_pre=on_pre_model, 
-                 on_post=on_post_model)
+                #  on_pre= on_pre_model_excitory if excitory_connection else on_pre_model_inhibtory, 
+                #  on_post= on_post_model_excitory if excitory_connection else on_post_model_inhibtory
+                 on_pre= on_pre_model if connection_probability == 1 else "v_post += w",
+                 on_post= on_post_model if connection_probability == 1 else ""
+                )
         
     S.connect(p=connection_probability)
     net.add(S)
     synapses.append(S)
 
-    for neuron_index in range(len(G1)):
-        if not np.any(S.i[:] == neuron_index):
-            target = randint(len(G2))
-            S.connect(i=neuron_index, j=target)
+    # one-to-one connection fix (to avoid non-connected neurons)
+    if connection_probability == 0:
+        S.connect(condition='i==j', p=1)
+
+    # random connection fix (to avoid non-connected neurons)
+    # for neuron_index in range(len(G1)):
+    #     if not np.any(S.i[:] == neuron_index):
+    #         target = randint(len(G2))
+    #         S.connect(i=neuron_index, j=target)
 
     S.w = 'clip(wStart*rand(), wStart*0.5, wStart)'
     S.w = 'wStart*rand()'
-    S.w = 'wStart'
+
+    # S.w -= 0.5
+
+    # input layer
+    if connection_probability == 0 and excitory_connection:
+        S.w = 500
+    if connection_probability == 0 and not excitory_connection:
+        S.w = -500
 
     # for neuron_index in range(len(G1)):
     #     synapse_indices = S.i[:] == neuron_index
     #     total_weight = np.sum(S.w[synapse_indices])
     #     if total_weight > 0:
     #         S.w[synapse_indices] /= total_weight / wMax
+
+    if connection_probability == 1:
+        @network_operation(dt=2*tau)
+        def normalize_weight():
+            print(S.w[0:5])
+            min_val = np.min(S.w)
+            max_val = np.max(S.w)
+            print(min_val)
+            print(max_val)
+            if min_val != max_val:
+                S.w = (S.w - min_val) / (max_val - min_val)
+                S.w =  S.w * 2
+                S.w =  S.w - 1
+            print(S.w[0:5])
+            print("____")
+
+        net.add(normalize_weight)
 
     return (net, synapses)
 
@@ -101,6 +134,7 @@ def generate_connect_layers_conv(G, meta_collection, kernel_size=3, stride=1, ke
     
     return (meta_collection, conv_neurons)
 
+# TODO add inhibtory handling here
 def connect_layers_conv(G, net, conv_neurons, kernel_data, meta_data):
     (kernel_size, output_height, output_width, input_height, input_width, stride) = meta_data
     kernel_synapses = []

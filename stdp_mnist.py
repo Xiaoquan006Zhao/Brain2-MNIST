@@ -74,16 +74,18 @@ X_separated, y_separated = load_data()
 number_label = 3
 number_label_2 = 8
 variation = 10
+
 numberOfLayers = 3
-multiplierOfN = None
+multiplierOfN = 1
+
 sample_indices = None
 sample_indices_two_label = [None, None]
 
-train(number_label, 2, numberOfLayers, None, False, sample_indices, switch_input=False)
-# train(number_label, 2, None, multiplierOfN, False, sample_indices, switch_input=False)
+# train(number_label, variation, numberOfLayers, None, False, sample_indices, switch_input=False)
+# train(number_label, variation, None, multiplierOfN, False, sample_indices, switch_input=False)
 
 # train(number_label, variation, numberOfLayers, None, False, sample_indices, switch_input=True)
-# train(number_label, variation, None, multiplierOfN, False, sample_indices, switch_input=True)
+train(number_label, variation, None, multiplierOfN, False, sample_indices, switch_input=True)
 
 
 # compare_train([number_label, number_label_2], variation, numberOfLayers, sample_indices_two_label, False, sample_indices, False)

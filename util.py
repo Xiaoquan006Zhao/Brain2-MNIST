@@ -6,27 +6,55 @@ from constant import total_duration, tau
 all_alphabets = 'abcdefghijklmnopqrstuvwxyz'
 words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
 
+
 def poisson_encoding(image, max_rate):
     input_rates = np.ceil(image.flatten() / 255.0) * max_rate
     N = len(input_rates) 
 
     # time_step = 0.999*tau
     # high-frequency stimulation
-    time_step = 0.1*tau
-
-    input_indices = np.nonzero(input_rates)[0]
+    time_step = 0.99*tau
 
     # v is a static variable, because v is updated by the input, thus no need to be leaky
-    input_group = NeuronGroup(N, '''v : 1''', threshold='v>1', reset="v=0")
-    input_group.v = 0
+    input_group_excitory = NeuronGroup(N, '''v : 1''', threshold='v>1', reset="v=0")
+    input_group_excitory.v = 0
+
+    input_group_inhibtory = NeuronGroup(N, '''v : 1''', threshold='v>1', reset="v=0")
+    input_group_inhibtory.v = 0
+
+    operation_counter = 0
+    test_counter_threshold = 30
 
     @network_operation(dt=time_step)
     def update_v():
-        input_group.v = 0 
-        for input_index in input_indices:
-            input_group.v[input_index] = 1.1
+        nonlocal operation_counter
+        # nonlocal excitory_indices
+        # nonlocal inhibtory_indices
+        operation_counter += 1
 
-    return (input_group, SpikeMonitor(input_group), update_v)
+        excitory_indices = np.nonzero(input_rates)[0]
+        inhibtory_indices = np.nonzero(input_rates == 0)[0]
+
+        input_group_excitory.v = 0 
+        input_group_inhibtory.v = 0
+        
+        # cover up half of the pixels and test memory recall
+        if operation_counter > test_counter_threshold:
+            operation_counter = 0
+            # for _ in range(5):
+            #     random_index = np.random.randint(0, len(excitory_indices))
+            #     excitory_indices[random_index] = 0
+            excitory_indices = excitory_indices[:int(len(excitory_indices)/2)]
+        
+        for excitory_index in excitory_indices:
+            input_group_excitory.v[excitory_index] = 1.1
+        
+        for inhibtory_index in inhibtory_indices:
+            input_group_inhibtory.v[inhibtory_index] = 1.1
+        
+    return ([input_group_excitory, input_group_inhibtory], 
+            [SpikeMonitor(input_group_excitory), SpikeMonitor(input_group_inhibtory)], 
+            update_v)
 
 def poisson_encoding_images(images, max_rate):
     input_array = []
@@ -35,43 +63,59 @@ def poisson_encoding_images(images, max_rate):
         input_array.append(input_rates)
     
     N = len(input_rates)
-    input_switch_counter = 0
-    input_switch_threshold = 10*tau/ms
-    input_pause_threshold = 2*tau/ms
+    operation_counter = 0
+    input_switch_threshold = 30
+    input_pause_threshold = 2
 
     # time_step = 0.999*tau
     # high-frequency stimulation
-    time_step = 0.1*tau
+    time_step = 0.99*tau
 
     which_image = 0
-    input_indices = np.nonzero(input_rates)[0]
 
     # v is a static variable, because v is updated by the input, thus no need to be leaky
-    input_group = NeuronGroup(N, '''v : 1''', threshold='v>1', reset="v=0")
-    input_group.v = 0
+    input_group_excitory = NeuronGroup(N, '''v : 1''', threshold='v>1', reset="v=0")
+    input_group_excitory.v = 0
+
+    input_group_inhibtory = NeuronGroup(N, '''v : 1''', threshold='v>1', reset="v=0")
+    input_group_inhibtory.v = 0
 
     @network_operation(dt=time_step)
     def update_v():
         nonlocal input_pause_threshold
-        nonlocal input_switch_counter
+        nonlocal input_switch_threshold
+        nonlocal operation_counter
         nonlocal which_image
-        nonlocal input_indices
+        nonlocal input_array
 
-        input_switch_counter += 1
-        input_group.v = 0 
-        input_indices = np.nonzero(input_array[which_image])[0]
+        operation_counter += 1
+        input_group_excitory.v = 0 
+        input_group_inhibtory.v = 0 
 
-        if input_switch_counter > input_switch_threshold:
-            input_switch_counter = 0
+        excitory_indices = np.nonzero(input_array[which_image])[0]
+        inhibtory_indices = np.nonzero(input_array[which_image] == 0)[0]
+
+        if operation_counter > input_switch_threshold:
+            operation_counter = 0
             which_image += 1
             which_image = which_image % len(input_array)
 
+            # for _ in range(5):
+            #     random_index = np.random.randint(0, len(excitory_indices))
+            #     excitory_indices[random_index] = 0
+            excitory_indices = excitory_indices[:int(len(excitory_indices)/2)]
+            
         
-        if input_switch_counter > input_pause_threshold:
-            for input_index in input_indices:
-                input_group.v[input_index] = 1.1
+        # if operation_counter > input_pause_threshold:
+        for excitory_index in excitory_indices:
+            input_group_excitory.v[excitory_index] = 1.1
+    
+        for inhibtory_index in inhibtory_indices:
+            input_group_inhibtory.v[inhibtory_index] = 1.1
 
-    return (input_group, SpikeMonitor(input_group), update_v)
+    return ([input_group_excitory, input_group_inhibtory], 
+            [SpikeMonitor(input_group_excitory), SpikeMonitor(input_group_inhibtory)], 
+            update_v)
 
 
 def sample_images(image_database, label, num_samples, indices):

@@ -11,15 +11,14 @@ def run_and_update(net, synapses, time):
     #     S.connect(p=agg_connect_probability/100)
 
 def simulate_layers(image, numberOfLayers, label, image_counter):
-
     if isinstance(image, list):
-        (inputGroup ,input_spikeMonitor, networkOperation) = poisson_encoding_images(image, max_rate)
+        (inputGroups ,input_spikeMonitors, networkOperation) = poisson_encoding_images(image, max_rate)
     else:
-        (inputGroup ,input_spikeMonitor, networkOperation) = poisson_encoding(image, max_rate)
+        (inputGroups ,input_spikeMonitors, networkOperation) = poisson_encoding(image, max_rate)
 
-    net = Network(inputGroup, input_spikeMonitor)
-    spikeMonitors = [input_spikeMonitor]
-    neuronGroups = [inputGroup]
+    net = Network(inputGroups[0], inputGroups[1], input_spikeMonitors[0], input_spikeMonitors[1])
+    spikeMonitors = [input_spikeMonitors[0], input_spikeMonitors[1]]
+    neuronGroups = [inputGroups[0], inputGroups[1]]
     synapses = []
 
     meta_collection = (net, spikeMonitors, neuronGroups, synapses)
@@ -27,8 +26,9 @@ def simulate_layers(image, numberOfLayers, label, image_counter):
     sobel_y_kernel = [1,2,1,0,0,0,-1,-2,-1]
     sobel_x_kernel = [1,0,-1,2,0,-2,1,0,-1]
 
-    (meta_collection, convGroup1) = generate_connect_layers_conv(inputGroup, meta_collection, stride=1, kernel_data=sobel_y_kernel)
-    (meta_collection, convGroup2) = generate_connect_layers_conv(inputGroup, meta_collection, stride=1, kernel_data=sobel_x_kernel)
+    # TODO add inhibtory handling here
+    (meta_collection, convGroup1) = generate_connect_layers_conv(inputGroups[0], meta_collection, stride=1, kernel_data=sobel_y_kernel)
+    (meta_collection, convGroup2) = generate_connect_layers_conv(inputGroups[1], meta_collection, stride=1, kernel_data=sobel_x_kernel)
 
     convGroups = [convGroup1, convGroup2]
     # convGroups = [convGroup1]

@@ -7,45 +7,60 @@ from constant import *
 from layers import *
 
 
-def generate_agg(G1, G1_spikeMonitor ,multiplierOfN):
-    N = G1.N
+def generate_agg(inputGroups, input_spikeMonitors ,multiplierOfN=1):
+    input_group_excitory = inputGroups[0]
+    input_spikeMonitor_excitory = input_spikeMonitors[0]
 
-    net = Network(G1, G1_spikeMonitor)
+    input_group_inhibtory = inputGroups[1]
+    input_spikeMonitor_inhibtory = input_spikeMonitors[1]
+
+    N = input_group_excitory.N
+
+    # Constructing Meta data collection
+    net = Network(input_group_excitory, input_group_inhibtory, input_spikeMonitor_excitory, input_spikeMonitor_inhibtory)
     synapses = []
-    spikeMonitors = [G1_spikeMonitor]
-    layers = [G1]
+    spikeMonitors = [input_spikeMonitor_excitory, input_spikeMonitor_inhibtory]
+    neuronGroups = [input_group_excitory, input_group_inhibtory]
 
-    agg_group = NeuronGroup(multiplierOfN*N, neuron_eqs, threshold=threshold_eqs, reset=reset_eqs, refractory=1*tau, method='exact')
+    agg_group = NeuronGroup(multiplierOfN*N, neuron_eqs, threshold=threshold_eqs, reset=reset_eqs, refractory=0.2*tau, method='exact')
     agg_group.v = 0
     agg_group.theta = 0
 
     agg_spikeMonitor = SpikeMonitor(agg_group)
-
-    layers.append(agg_group)
+    neuronGroups.append(agg_group)
     spikeMonitors.append(agg_spikeMonitor)
-    net.add(agg_spikeMonitor)
     net.add(agg_group)
+    net.add(agg_spikeMonitor)
 
-    G_prev = layers[0]
-    G_next = layers[1]
+    meta_collection = (net, spikeMonitors, neuronGroups, synapses)
 
-    (net, synapses) = connect_layers_excitory(G_prev, G_next, input_connect_probability, net, synapses)
-    (net, synapses) = connect_layers_excitory(G_next, G_next, agg_connect_probability, net, synapses)
-    # (net, synapses) = connect_layers_inhibitory(G_next, G_next, agg_connect_probability/10, net, synapses)
+    (net, synapses) = connect_layers_excitory(input_group_excitory, agg_group, 0, meta_collection)
+    (net, synapses) = connect_layers_excitory(input_group_inhibtory, agg_group, 0, meta_collection, excitory_connection=False)
+
+    (net, synapses) = connect_layers_excitory(agg_group, agg_group, 1, meta_collection)
     
-    return (net, synapses, spikeMonitors)
+    return meta_collection
 
 def simulate_agg(image, multiplierOfN, label, image_counter):
-    (inputGroup ,input_spikeMonitor, networkOperation) = poisson_encoding(image, max_rate)
+    # (inputGroups ,input_spikeMonitors, networkOperation) = poisson_encoding(image, max_rate)
 
-    (net, synapses, spikeMonitors) = generate_agg(inputGroup, input_spikeMonitor, multiplierOfN)
+    if isinstance(image, list):
+        (inputGroups ,input_spikeMonitors, networkOperation) = poisson_encoding_images(image, max_rate)
+    else:
+        (inputGroups ,input_spikeMonitors, networkOperation) = poisson_encoding(image, max_rate)
 
+    meta_collection = generate_agg(inputGroups, input_spikeMonitors, multiplierOfN)
+
+    (net, spikeMonitors, neuronGroups, synapses) = meta_collection
     net.add(networkOperation)
 
     for iter in range(iteration):
         run_and_update(net, synapses, duration)
 
-    visualize_multi_layer_spikes_2D(spikeMonitors, [(29, 28), (29*multiplierOfN, 28)], total_duration_graph, interval, label, len(spikeMonitors), image_counter)
+    img_neurons = [neuron_group.N for neuron_group in neuronGroups]
+
+    # visualize_multi_layer_spikes_2D(spikeMonitors, [(29, 28), (29*multiplierOfN, 28)], total_duration_graph, interval, label, len(spikeMonitors), image_counter)
+    visualize_multi_layer_spikes_2D(spikeMonitors, img_neurons, total_duration_graph, interval, label, len(spikeMonitors), image_counter)
     weight_matrices = visualize_multi_layer_weights_2D(synapses, label, len(spikeMonitors), image_counter)
 
     print(f"[{image_counter}] image is finished. {multiplierOfN} * N")

@@ -12,7 +12,7 @@ dtheta/dt = (-(theta+fire_threshold/1.5))/tau : 1
 threshold_eqs = 'v > fire_threshold + theta'
 
 reset_eqs = '''
-theta += (v-fire_threshold-theta) thetaIncrement
+theta += (v-fire_threshold-theta) * thetaIncrement
 theta = clip(theta, 0, theta)
 v = 0
 '''
