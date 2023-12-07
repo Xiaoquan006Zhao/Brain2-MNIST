@@ -23,6 +23,10 @@ def visualize_multi_layer_spikes_2D(spike_monitors,  img_neurons, duration, inte
     for i, number_tag in enumerate(all_alphabets):
         axs[0].text(i+1, -1, number_tag, ha='center', va='center')
 
+    # Adding headers A-Z over the first 26 columns
+    for i, number_tag in enumerate(all_alphabets):
+        axs[2].text(i+1, -1, number_tag, ha='center', va='center')
+
     def update(frame):
         # re-initialize every time for fresh update, because when the previous effect of activation stack up
         # it's hard to visualize what is happening
@@ -98,6 +102,7 @@ def visualize_multi_layer_weights_2D(synapses, label, max_layer, image_counter):
             weight_matrix[i][j] = weight
         
         print(f"index: {index}, Max weight {np.max(weight_matrix)}")
+        print(f"index: {index}, Min weight {np.min(weight_matrix)}")
 
         weight_matrices.append(weight_matrix)
         

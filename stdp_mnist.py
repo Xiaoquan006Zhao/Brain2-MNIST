@@ -10,7 +10,15 @@ def load_data():
 
 def train(number_label, variation, max_layers=None, multiplierOfN=None, cross_label=False, sample_indices=None, switch_input=False):
     """Trains the model based on the given parameters."""
-    input_images = sample_images(X_separated, number_label, variation, sample_indices)
+    if isinstance(number_label, list):
+        input_images = []
+        for label in number_label:
+            input_image = sample_images(X_separated, label, variation, sample_indices)
+            input_images.extend(input_image)
+        np.random.shuffle(input_images)
+    else:
+        input_images = sample_images(X_separated, number_label, variation, sample_indices)
+
 
     training_mode = "uniform" if not switch_input else "different"
     print(f"Start {training_mode} input training")
@@ -73,7 +81,7 @@ def compare_train(number_labels, variation, max_layers=None, multiplierOfN=None,
 X_separated, y_separated = load_data()
 number_label = 3
 number_label_2 = 8
-variation = 10
+variation = 20
 
 numberOfLayers = 3
 multiplierOfN = 1
@@ -85,7 +93,9 @@ sample_indices_two_label = [None, None]
 # train(number_label, variation, None, multiplierOfN, False, sample_indices, switch_input=False)
 
 # train(number_label, variation, numberOfLayers, None, False, sample_indices, switch_input=True)
-train(number_label, variation, None, multiplierOfN, False, sample_indices, switch_input=True)
+# train(number_label, variation, None, multiplierOfN, False, sample_indices, switch_input=True)
+
+train([3,4], variation, None, multiplierOfN, False, sample_indices, switch_input=True)
 
 
 # compare_train([number_label, number_label_2], variation, numberOfLayers, sample_indices_two_label, False, sample_indices, False)

@@ -24,19 +24,19 @@ dapre/dt = -apre/taupre : 1 (event-driven)
 dapost/dt = -apost/taupost : 1 (event-driven)
 '''
 
-
-no_activation_threshold = 0.01
-yes_activation_threshold = 0.01
+no_activation_threshold = 0.001
+yes_activation_threshold = 0.0099
+training_mode = 1
 
 # no activation of post in recent activities, thus decrease the weight
 on_pre_model = '''
 apre += Apre
 
 condition_no_post_activation = int(apost < no_activation_threshold)
-w -= condition_no_post_activation * wIncrement
+w -= condition_no_post_activation * (wMax*1.1-w) * wIncrement * training_mode
 
 condition_yes_post_activation = int(apost > yes_activation_threshold)
-w += condition_yes_post_activation * wIncrement
+w += condition_yes_post_activation * (wMax*1.1-w) * wIncrement * training_mode
 
 w = clip(w, wMin, wMax)
 v_post += w
@@ -58,12 +58,11 @@ on_post_model = '''
 apost += Apost
 
 condition_no_pre_activation = int(apre < no_activation_threshold)
-w -= condition_no_pre_activation * wIncrement 
+w -= condition_no_pre_activation * (wMax*1.1-w) *wIncrement * training_mode
 
 condition_yes_pre_activation = int(apre > yes_activation_threshold)
-w += condition_yes_pre_activation * wIncrement 
+w += condition_yes_pre_activation * (wMax*1.1-w) *wIncrement * training_mode
 
-w += apre
 w = clip(w, wMin, wMax)
 '''
 

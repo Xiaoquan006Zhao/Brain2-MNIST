@@ -1,6 +1,6 @@
 from brian2 import *
 
-seed(437)
+seed(439)
 
 tau = 5*ms
 tau_Ca = 0.8*tau
@@ -26,12 +26,12 @@ wMax = 1
 CaMin = EndoMin = ClMin = 0
 wMin = -1
 
-wStart = 0.1
+wStart = 0
 wAddThreshold = 0.6
 
 max_rate = 300 * Hz
 
-iteration = 80
+iteration = 400
 duration = 5 * ms
 total_duration = iteration * duration
 total_duration_graph = total_duration/ms

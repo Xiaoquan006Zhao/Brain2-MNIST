@@ -1,33 +1,34 @@
 import numpy as np
 from brian2 import *
 from constant import total_duration, tau
+from model_constant_simple import training_mode 
 
 
 all_alphabets = 'abcdefghijklmnopqrstuvwxyz'
 words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
 
+total_operation_counter = 0
+test_counter_threshold = 7
+time_step = 0.99*tau
+
 
 def poisson_encoding(image, max_rate):
+    operation_counter = 0
     input_rates = np.ceil(image.flatten() / 255.0) * max_rate
     N = len(input_rates) 
-
-    # time_step = 0.999*tau
-    # high-frequency stimulation
-    time_step = 0.99*tau
 
     # v is a static variable, because v is updated by the input, thus no need to be leaky
     input_group_excitory = NeuronGroup(N, '''v : 1''', threshold='v>1', reset="v=0")
     input_group_excitory.v = 0
 
-    input_group_inhibtory = NeuronGroup(N, '''v : 1''', threshold='v>1', reset="v=0")
+    input_group_inhibtory = NeuronGroup(N, '''v : 1''', threshold='v<1', reset="v=0")
     input_group_inhibtory.v = 0
-
-    operation_counter = 0
-    test_counter_threshold = 30
 
     @network_operation(dt=time_step)
     def update_v():
         nonlocal operation_counter
+        global test_counter_threshold
+    
         # nonlocal excitory_indices
         # nonlocal inhibtory_indices
         operation_counter += 1
@@ -50,27 +51,28 @@ def poisson_encoding(image, max_rate):
             input_group_excitory.v[excitory_index] = 1.1
         
         for inhibtory_index in inhibtory_indices:
-            input_group_inhibtory.v[inhibtory_index] = 1.1
+            input_group_inhibtory.v[inhibtory_index] = -1.1
         
     return ([input_group_excitory, input_group_inhibtory], 
             [SpikeMonitor(input_group_excitory), SpikeMonitor(input_group_inhibtory)], 
             update_v)
 
 def poisson_encoding_images(images, max_rate):
+    global total_operation_counter
+    total_operation_counter = 0
+
+    pause_counter = 0
+    operation_counter = 0
+
+    len_training_set = len(images)
+
     input_array = []
     for image in images:
         input_rates = np.ceil(image.flatten() / 255.0) * max_rate
         input_array.append(input_rates)
     
     N = len(input_rates)
-    operation_counter = 0
-    input_switch_threshold = 30
     input_pause_threshold = 2
-
-    # time_step = 0.999*tau
-    # high-frequency stimulation
-    time_step = 0.99*tau
-
     which_image = 0
 
     # v is a static variable, because v is updated by the input, thus no need to be leaky
@@ -83,11 +85,15 @@ def poisson_encoding_images(images, max_rate):
     @network_operation(dt=time_step)
     def update_v():
         nonlocal input_pause_threshold
-        nonlocal input_switch_threshold
-        nonlocal operation_counter
         nonlocal which_image
         nonlocal input_array
 
+        global total_operation_counter
+        global test_counter_threshold
+
+        nonlocal pause_counter
+        nonlocal operation_counter
+        
         operation_counter += 1
         input_group_excitory.v = 0 
         input_group_inhibtory.v = 0 
@@ -95,17 +101,43 @@ def poisson_encoding_images(images, max_rate):
         excitory_indices = np.nonzero(input_array[which_image])[0]
         inhibtory_indices = np.nonzero(input_array[which_image] == 0)[0]
 
-        if operation_counter > input_switch_threshold:
-            operation_counter = 0
-            which_image += 1
-            which_image = which_image % len(input_array)
+        print(f"total_operation_counter: {total_operation_counter}")
+        print(f"len_training_set: {len_training_set}")
+        print(f"operation_counter: {operation_counter}")
+        print(f"test_counter_threshold: {test_counter_threshold}")
+        print(f"pause_counter: {pause_counter}")
+        print(operation_counter > test_counter_threshold or total_operation_counter > 15)
 
-            # for _ in range(5):
+        if operation_counter > test_counter_threshold or total_operation_counter > 15:
+            # for _ in range(10):
             #     random_index = np.random.randint(0, len(excitory_indices))
             #     excitory_indices[random_index] = 0
-            excitory_indices = excitory_indices[:int(len(excitory_indices)/2)]
-            
-        
+
+            inhibtory_indices = []
+            excitory_indices = excitory_indices[:7]
+
+            # testing cue
+            # 7 time-step to make sure agg_group.v = 0 (the effect of excitory and inhibtory input wear off to visualize the effect of fully connected agg_group)
+            # 3 time-step to test gradual activation of fully connected layer
+            if pause_counter > 10:
+                pause_counter = 0
+                operation_counter = 0
+                which_image += 1
+                total_operation_counter += 1
+                which_image = which_image % len(input_array)
+            # clear pause
+            elif pause_counter < 7:
+                # global training_mode
+                # training_mode = 0
+                excitory_indices = []
+                inhibtory_indices = []
+                # only first time-step, we inhibit everything
+                if pause_counter == 0:
+                    inhibtory_indices = range(len(input_group_inhibtory.v))
+                pause_counter += 1
+            else:
+                pause_counter += 1
+
         # if operation_counter > input_pause_threshold:
         for excitory_index in excitory_indices:
             input_group_excitory.v[excitory_index] = 1.1

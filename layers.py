@@ -77,39 +77,37 @@ def connect_layers_excitory(G1, G2, connection_probability, meta_collection, exc
     #         target = randint(len(G2))
     #         S.connect(i=neuron_index, j=target)
 
-    S.w = 'clip(wStart*rand(), wStart*0.5, wStart)'
-    S.w = 'wStart*rand()'
+    # S.w = 'wStart*rand()'
+    S.w = 'wStart'
 
-    # S.w -= 0.5
+    # I think adding a delay messes with approach of trying to replicate the dot product
+    # because whenever v > 1, the neuron will fire, then a delay that postpone's the negative effects
+    # will influence the output of whether a neuron actually fires or not.
+    # S.delay = '0.01*tau'
 
     # input layer
     if connection_probability == 0 and excitory_connection:
-        S.w = 500
+        S.w = 5000
     if connection_probability == 0 and not excitory_connection:
-        S.w = -500
+        S.w = -5000
 
-    # for neuron_index in range(len(G1)):
-    #     synapse_indices = S.i[:] == neuron_index
-    #     total_weight = np.sum(S.w[synapse_indices])
-    #     if total_weight > 0:
-    #         S.w[synapse_indices] /= total_weight / wMax
+    # if connection_probability == 1:
+    #     @network_operation(dt=2*tau)
+    #     def normalize_weight():
+    #         print(S.w[0:5])
+    #         min_val = np.min(S.w)
+    #         max_val = np.max(S.w)
+    #         print(min_val)
+    #         print(max_val)
+    #         if min_val != max_val:
+    #             S.w = (S.w - min_val) / (max_val - min_val)
+    #             S.w =  S.w * 2
+    #             S.w =  S.w - 1
+    #         print(S.w[0:5])
+    #         print("____")
 
-    if connection_probability == 1:
-        @network_operation(dt=2*tau)
-        def normalize_weight():
-            print(S.w[0:5])
-            min_val = np.min(S.w)
-            max_val = np.max(S.w)
-            print(min_val)
-            print(max_val)
-            if min_val != max_val:
-                S.w = (S.w - min_val) / (max_val - min_val)
-                S.w =  S.w * 2
-                S.w =  S.w - 1
-            print(S.w[0:5])
-            print("____")
+    #     net.add(normalize_weight)
 
-        net.add(normalize_weight)
 
     return (net, synapses)
 
