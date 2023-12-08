@@ -7,7 +7,7 @@ from brian2 import ms
 
 save_path = f'/Users/zhaoxiaoquan/Documents/Brain2 MNIST/gif/'
 
-def visualize_multi_layer_spikes_2D(spike_monitors,  img_neurons, duration, interval, label, max_layer, image_counter):
+def visualize_multi_layer_spikes_2D(spike_monitors,  img_neurons, duration, interval, label="test", max_layer="test", image_counter="test"):
     img_shapes = [perfect_square(number_neuron) for number_neuron in img_neurons]
     
     fig = plt.figure(figsize=(8, 6))  
@@ -19,13 +19,14 @@ def visualize_multi_layer_spikes_2D(spike_monitors,  img_neurons, duration, inte
     ims = [ax.imshow(np.zeros(img_shape), cmap='gray', vmin=0, vmax=1) for ax, img_shape in zip(axs, img_shapes)]
     last_time = 0
 
-    # Adding headers A-Z over the first 26 columns
-    for i, number_tag in enumerate(all_alphabets):
-        axs[0].text(i+1, -1, number_tag, ha='center', va='center')
+    # Adding headers 1-9 
+    for i, number_tag in enumerate(range(10)):
+        axs[0].text(i, -1, number_tag, ha='center', va='center')
 
-    # Adding headers A-Z over the first 26 columns
-    for i, number_tag in enumerate(all_alphabets):
-        axs[2].text(i+1, -1, number_tag, ha='center', va='center')
+    # Adding headers 1-9
+    if len(axs) > 2:
+        for i, number_tag in enumerate(range(10)):
+            axs[2].text(i, -1, number_tag, ha='center', va='center')
 
     def update(frame):
         # re-initialize every time for fresh update, because when the previous effect of activation stack up

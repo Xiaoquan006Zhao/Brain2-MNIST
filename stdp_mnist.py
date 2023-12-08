@@ -34,16 +34,16 @@ def train(number_label, variation, max_layers=None, multiplierOfN=None, cross_la
         len_images = len(input_images) // 2
         weight_matrices_per_variation = [
             simulate(input_images[:len_images], max_layers or multiplierOfN, number_label, -1),
-            simulate(input_images[len_images:], max_layers or multiplierOfN, number_label, -2)
+            # simulate(input_images[len_images:], max_layers or multiplierOfN, number_label, -2)
         ]
 
-    # Transpose the weight matrices for cross-label comparison
-    weight_matrices_per_variation = list(map(list, zip(*weight_matrices_per_variation)))
+    # # Transpose the weight matrices for cross-label comparison
+    # weight_matrices_per_variation = list(map(list, zip(*weight_matrices_per_variation)))
 
-    # Perform comparison if cross_label is True
-    if not cross_label:
-        return compare_weights(weight_matrices_per_variation)
-    return weight_matrices_per_variation
+    # # Perform comparison if cross_label is True
+    # if not cross_label:
+    #     return compare_weights(weight_matrices_per_variation)
+    # return weight_matrices_per_variation
 
 def compare_weights(weight_matrices):
     """Compares the weight matrices and prints the differences."""
@@ -95,7 +95,7 @@ sample_indices_two_label = [None, None]
 # train(number_label, variation, numberOfLayers, None, False, sample_indices, switch_input=True)
 # train(number_label, variation, None, multiplierOfN, False, sample_indices, switch_input=True)
 
-train([3,4], variation, None, multiplierOfN, False, sample_indices, switch_input=True)
+train([2,3,4], variation, None, multiplierOfN, False, sample_indices, switch_input=True)
 
 
 # compare_train([number_label, number_label_2], variation, numberOfLayers, sample_indices_two_label, False, sample_indices, False)

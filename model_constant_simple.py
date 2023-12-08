@@ -1,3 +1,5 @@
+from constant import Apre
+
 # -(theta+fire_threshold/1.5) pushes theta to go to -fire_threshold/1.5 rather than 0, introduces homestatsis
 neuron_eqs = '''
 dv/dt = -v/tau : 1
@@ -24,22 +26,25 @@ dapre/dt = -apre/taupre : 1 (event-driven)
 dapost/dt = -apost/taupost : 1 (event-driven)
 '''
 
+# nearly no activity
 no_activation_threshold = 0.001
-yes_activation_threshold = 0.0099
-training_mode = 1
+
+# recent 1 activity because Apre = 0.01
+yes_activation_threshold = Apre*0.3
+training_flag = 1
 
 # no activation of post in recent activities, thus decrease the weight
 on_pre_model = '''
 apre += Apre
 
 condition_no_post_activation = int(apost < no_activation_threshold)
-w -= condition_no_post_activation * (wMax*1.1-w) * wIncrement * training_mode
+w -= condition_no_post_activation * wIncrement 
 
 condition_yes_post_activation = int(apost > yes_activation_threshold)
-w += condition_yes_post_activation * (wMax*1.1-w) * wIncrement * training_mode
+w += condition_yes_post_activation * wIncrement 
 
 w = clip(w, wMin, wMax)
-v_post += w
+v_post += w**5
 '''
 
 # no activation of post in recent activities, thus increase the weight (because of inhibtory)
@@ -58,10 +63,10 @@ on_post_model = '''
 apost += Apost
 
 condition_no_pre_activation = int(apre < no_activation_threshold)
-w -= condition_no_pre_activation * (wMax*1.1-w) *wIncrement * training_mode
+w -= condition_no_pre_activation * wIncrement 
 
 condition_yes_pre_activation = int(apre > yes_activation_threshold)
-w += condition_yes_pre_activation * (wMax*1.1-w) *wIncrement * training_mode
+w += condition_yes_pre_activation * wIncrement 
 
 w = clip(w, wMin, wMax)
 '''

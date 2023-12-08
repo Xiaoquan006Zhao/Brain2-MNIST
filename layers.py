@@ -83,7 +83,9 @@ def connect_layers_excitory(G1, G2, connection_probability, meta_collection, exc
     # I think adding a delay messes with approach of trying to replicate the dot product
     # because whenever v > 1, the neuron will fire, then a delay that postpone's the negative effects
     # will influence the output of whether a neuron actually fires or not.
-    # S.delay = '0.01*tau'
+
+    if connection_probability == 1:
+        S.delay = '0.01*tau'
 
     # input layer
     if connection_probability == 0 and excitory_connection:

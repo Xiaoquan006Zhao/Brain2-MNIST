@@ -1,15 +1,16 @@
 import numpy as np
 from brian2 import *
-from constant import total_duration, tau
-from model_constant_simple import training_mode 
+from constant import total_duration, tau, iteration
+from model_constant_simple import training_flag
 
 
 all_alphabets = 'abcdefghijklmnopqrstuvwxyz'
 words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
 
-total_operation_counter = 0
 test_counter_threshold = 7
+pause_threshold = 3
 time_step = 0.99*tau
+start_testing = False
 
 
 def poisson_encoding(image, max_rate):
@@ -58,8 +59,6 @@ def poisson_encoding(image, max_rate):
             update_v)
 
 def poisson_encoding_images(images, max_rate):
-    global total_operation_counter
-    total_operation_counter = 0
 
     pause_counter = 0
     operation_counter = 0
@@ -72,7 +71,6 @@ def poisson_encoding_images(images, max_rate):
         input_array.append(input_rates)
     
     N = len(input_rates)
-    input_pause_threshold = 2
     which_image = 0
 
     # v is a static variable, because v is updated by the input, thus no need to be leaky
@@ -84,61 +82,34 @@ def poisson_encoding_images(images, max_rate):
 
     @network_operation(dt=time_step)
     def update_v():
-        nonlocal input_pause_threshold
         nonlocal which_image
         nonlocal input_array
 
-        global total_operation_counter
         global test_counter_threshold
-
         nonlocal pause_counter
+
         nonlocal operation_counter
-        
         operation_counter += 1
+
         input_group_excitory.v = 0 
         input_group_inhibtory.v = 0 
 
         excitory_indices = np.nonzero(input_array[which_image])[0]
         inhibtory_indices = np.nonzero(input_array[which_image] == 0)[0]
 
-        print(f"total_operation_counter: {total_operation_counter}")
-        print(f"len_training_set: {len_training_set}")
-        print(f"operation_counter: {operation_counter}")
-        print(f"test_counter_threshold: {test_counter_threshold}")
-        print(f"pause_counter: {pause_counter}")
-        print(operation_counter > test_counter_threshold or total_operation_counter > 15)
 
-        if operation_counter > test_counter_threshold or total_operation_counter > 15:
-            # for _ in range(10):
-            #     random_index = np.random.randint(0, len(excitory_indices))
-            #     excitory_indices[random_index] = 0
+        # if operation_counter > test_counter_threshold:
+        #     which_image += 1
+        #     which_image = which_image % len(input_array)
 
-            inhibtory_indices = []
-            excitory_indices = excitory_indices[:7]
-
-            # testing cue
-            # 7 time-step to make sure agg_group.v = 0 (the effect of excitory and inhibtory input wear off to visualize the effect of fully connected agg_group)
-            # 3 time-step to test gradual activation of fully connected layer
-            if pause_counter > 10:
-                pause_counter = 0
-                operation_counter = 0
-                which_image += 1
-                total_operation_counter += 1
-                which_image = which_image % len(input_array)
-            # clear pause
-            elif pause_counter < 7:
-                # global training_mode
-                # training_mode = 0
+        if operation_counter > test_counter_threshold:
+            if pause_counter < 2:
+                pause_counter += 1
                 excitory_indices = []
-                inhibtory_indices = []
-                # only first time-step, we inhibit everything
-                if pause_counter == 0:
-                    inhibtory_indices = range(len(input_group_inhibtory.v))
-                pause_counter += 1
+                inhibtory_indices = range(len(input_group_inhibtory.v))
             else:
-                pause_counter += 1
+                operation_counter = 0
 
-        # if operation_counter > input_pause_threshold:
         for excitory_index in excitory_indices:
             input_group_excitory.v[excitory_index] = 1.1
     
@@ -170,23 +141,21 @@ def sample_images(image_database, label, num_samples, indices):
     images = images_of_label[random_indices]
     images_augmented = []
 
-    one_hot_encoded_word = one_hot_encode_word(words[label])
-    one_hot_encoded_word = [300] + one_hot_encoded_word + [300]  # make dimension match MNIST
+    one_hot_encoded_word = [0] * 28
+    one_hot_encoded_word[label] = 300
 
     for image in images:
         image = np.insert(image, 0, one_hot_encoded_word, axis=0)
         image = image.reshape(29, 28)
         images_augmented.append(image)
 
-    
 
     return images_augmented
 
 def one_hot_encode_word(word):
-    
     char_to_index = {char: index for index, char in enumerate(all_alphabets)}
     
-    one_hot_vector = [0] * len(all_alphabets)
+    one_hot_vector = [0] * 28
         
     for char in word:
         one_hot_vector[char_to_index[char]] = 300
