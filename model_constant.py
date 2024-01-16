@@ -1,6 +1,6 @@
 # -(theta+fire_threshold/1.5) pushes theta to go to -fire_threshold/1.5 rather than 0, introduces homestatsis
 neuron_eqs = '''
-dv/dt = -v/tau : 1
+dv/dt = -v/tau : 1 (unless refractory)
 dtheta/dt = (-(theta+fire_threshold/1.5))/tau : 1
 '''
 
@@ -61,7 +61,6 @@ w += apre
 w = clip(w, wMin, wMax)
 
 condition_high_voltage = int(v_pre > 0.75)
-
 
 apost += Apost
 '''

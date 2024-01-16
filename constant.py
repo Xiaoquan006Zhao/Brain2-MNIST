@@ -1,6 +1,6 @@
 from brian2 import *
 
-seed(1459)
+seed(1767)
 
 tau = 5*ms
 tau_Ca = 0.8*tau
@@ -15,7 +15,7 @@ thetaIncrement = 0.005
 
 CaIncrement = 0.01
 EndoIncrement = 0.01
-wIncrement = 0.1
+wIncrement = 0.01
 
 ClMax = 1 
 CaMax = 1 # so that ca will decay in reason time in case of a lot of stimulation
@@ -24,14 +24,14 @@ EndoMax = 1 # so that Endo will decay in reason time in case of a lot of stimula
 wMax = 1.2
 
 CaMin = EndoMin = ClMin = 0
-wMin = -1.2
+wMin = -1.5
 
 wStart = 0
 wAddThreshold = 0.6
 
 max_rate = 300 * Hz
 
-iteration = 500
+iteration = 40
 duration = 5 * ms
 total_duration = iteration * duration
 total_duration_graph = total_duration/ms

@@ -2,14 +2,14 @@ import numpy as np
 from brian2 import *
 from constant import total_duration, tau, iteration
 from model_constant_simple import training_flag
-
+from PIL import Image
 
 all_alphabets = 'abcdefghijklmnopqrstuvwxyz'
 words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
 
 test_counter_threshold = 7
 pause_threshold = 3
-time_step = 0.99*tau
+time_step = 0.33*tau
 start_testing = False
 
 
@@ -99,16 +99,21 @@ def poisson_encoding_images(images, max_rate):
 
 
         # if operation_counter > test_counter_threshold:
+        #     operation_counter = 0
         #     which_image += 1
         #     which_image = which_image % len(input_array)
 
         if operation_counter > test_counter_threshold:
-            if pause_counter < 2:
+            excitory_indices = []
+            inhibtory_indices = range(len(input_group_inhibtory.v))
+
+            if pause_counter < 10:
                 pause_counter += 1
-                excitory_indices = []
-                inhibtory_indices = range(len(input_group_inhibtory.v))
             else:
+                pause_counter = 0
                 operation_counter = 0
+                which_image += 1
+                which_image = which_image % len(input_array)   
 
         for excitory_index in excitory_indices:
             input_group_excitory.v[excitory_index] = 1.1
@@ -142,13 +147,24 @@ def sample_images(image_database, label, num_samples, indices):
     images_augmented = []
 
     one_hot_encoded_word = [0] * 28
-    one_hot_encoded_word[label] = 300
+    one_hot_encoded_word[label] = 1
 
-    for image in images:
-        image = np.insert(image, 0, one_hot_encoded_word, axis=0)
-        image = image.reshape(29, 28)
-        images_augmented.append(image)
+    for index, image in enumerate(images):
 
+        min_val = np.min(image)
+        max_val = np.max(image)
+        normalized_image = (image - min_val) / (max_val - min_val)
+
+        augemented_image = np.insert(normalized_image, 0, one_hot_encoded_word, axis=0)
+        augemented_image = augemented_image.reshape(29, 28)
+        
+        scaled_image = np.uint8(augemented_image*255)
+
+        if len(images) < 10:
+            im = Image.fromarray(scaled_image)
+            im.save(f"samples/{label}_{index}.jpeg")
+
+        images_augmented.append(scaled_image)
 
     return images_augmented
 

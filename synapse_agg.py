@@ -67,8 +67,9 @@ def simulate_agg(image, multiplierOfN, label, image_counter):
 
     img_neurons = [neuron_group.N for neuron_group in neuronGroups]
 
-    visualize_multi_layer_spikes_2D(spikeMonitors, img_neurons, total_duration_graph, interval, label, len(spikeMonitors), image_counter)
-    # weight_matrices = visualize_multi_layer_weights_2D(synapses, label, len(spikeMonitors), image_counter)
+    if iteration < 50:
+        visualize_multi_layer_spikes_2D(spikeMonitors, img_neurons, total_duration_graph, interval, label, len(spikeMonitors), image_counter)
+        weight_matrices = visualize_multi_layer_weights_2D(synapses, label, len(spikeMonitors), image_counter)
 
     main_layer_synapse = synapses[-1]
     test_generation(main_layer_synapse, img_neurons[-1])

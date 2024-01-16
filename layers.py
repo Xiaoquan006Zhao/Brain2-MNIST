@@ -63,7 +63,7 @@ def connect_layers_excitory(G1, G2, connection_probability, meta_collection, exc
                  on_post= on_post_model if connection_probability == 1 else ""
                 )
         
-    S.connect(p=connection_probability)
+    S.connect(condition="i!=j" ,p=connection_probability)
     net.add(S)
     synapses.append(S)
 
